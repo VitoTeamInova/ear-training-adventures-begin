@@ -1,36 +1,85 @@
 
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { PlayableNote } from '../utils/noteUtils';
 
 const useAudio = () => {
-  // In a real implementation, we would use the Web Audio API to generate or play audio files
-  // For now, we'll mock the audio functionality
-  
+  const audioContextRef = useRef<AudioContext | null>(null);
+
+  const getAudioContext = () => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new AudioContext();
+    }
+    return audioContextRef.current;
+  };
+
   const playChord = useCallback(() => {
     console.log('Playing C chord');
-    // In a real implementation:
-    // 1. Create oscillators for C, E, G notes
-    // 2. Play them simultaneously
-    // 3. Add a slight decay
+    const audioContext = getAudioContext();
+    
+    // C major chord frequencies (C4, E4, G4)
+    const frequencies = [261.63, 329.63, 392.00];
+    
+    frequencies.forEach((freq, index) => {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.frequency.value = freq;
+      oscillator.type = 'sine';
+      
+      gainNode.gain.value = 0.2; // Lower volume for the chord
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.start();
+      // Stagger the notes slightly for a more natural sound
+      const delay = index * 50;
+      
+      // Start fade out after a short delay
+      gainNode.gain.exponentialRampToValueAtTime(
+        0.001, audioContext.currentTime + 1.5 + (delay / 1000)
+      );
+      
+      // Stop the oscillator after the gain ramp is complete
+      setTimeout(() => {
+        oscillator.stop();
+      }, 1600 + delay);
+    });
   }, []);
 
   const playNote = useCallback((note: PlayableNote) => {
     console.log(`Playing note: ${note}`);
     
-    // In a real implementation, we'd map notes to frequencies:
+    // Map notes to frequencies
     const noteToFrequency: Record<PlayableNote, number> = {
       'Do': 261.63, // C4
       'Fa': 349.23, // F4
       'Sol': 392.00, // G4
     };
     
-    // Then use Web Audio API to play the actual note
-    // const audioContext = new AudioContext();
-    // const oscillator = audioContext.createOscillator();
-    // oscillator.frequency.value = noteToFrequency[note];
-    // oscillator.connect(audioContext.destination);
-    // oscillator.start();
-    // setTimeout(() => oscillator.stop(), 1000);
+    const audioContext = getAudioContext();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.frequency.value = noteToFrequency[note];
+    oscillator.type = 'sine';
+    
+    gainNode.gain.value = 0.3;
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.start();
+    
+    // Smooth decay
+    gainNode.gain.exponentialRampToValueAtTime(
+      0.001, audioContext.currentTime + 1.0
+    );
+    
+    // Stop the oscillator after the gain ramp is complete
+    setTimeout(() => {
+      oscillator.stop();
+    }, 1100);
   }, []);
 
   return { playChord, playNote };

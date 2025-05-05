@@ -75,7 +75,7 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
               onClick={() => currentNote && playNote(currentNote)} 
               className="bg-secondary hover:bg-secondary/90 mb-6"
             >
-              Play Note Again
+              Re-Play
             </Button>
           )}
           
