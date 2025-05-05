@@ -16,8 +16,8 @@ const useAudio = () => {
     console.log('Playing C chord');
     const audioContext = getAudioContext();
     
-    // C major chord frequencies (C4, E4, G4)
-    const frequencies = [261.63, 329.63, 392.00];
+    // C major chord frequencies (C4, E4, G4, C5)
+    const frequencies = [261.63, 329.63, 392.00, 523.25];
     
     frequencies.forEach((freq, index) => {
       const oscillator = audioContext.createOscillator();

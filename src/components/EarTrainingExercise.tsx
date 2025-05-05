@@ -41,15 +41,12 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
     
     setAttempts(prev => prev + 1);
     
-    // Handle high Do separately
-    if (currentNote === 'HighDo' && note === 'Do' && NOTES.indexOf(NOTES.find(n => n.note === note)!) === 7) {
-      setIsExerciseComplete(true);
-      setExercises(prev => prev + 1);
-      return;
-    }
+    // Check if the current note is HighDo and the user clicked the higher Do button (index 7)
+    const isHighDoCorrect = currentNote === 'HighDo' && 
+                          note === 'Do' && 
+                          NOTES.findIndex(n => n.note === note && n.number === 8) === 7;
     
-    if ((note === currentNote) || 
-        (note === 'Do' && currentNote === 'HighDo' && NOTES.indexOf(NOTES.find(n => n.note === note)!) === 7)) {
+    if (note === currentNote || isHighDoCorrect) {
       // Correct answer
       setIsExerciseComplete(true);
       setExercises(prev => prev + 1);
