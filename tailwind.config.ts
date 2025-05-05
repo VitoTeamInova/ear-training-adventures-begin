@@ -20,7 +20,7 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				comfortaa: ['Comfortaa', 'sans-serif'],
+				inter: ['Inter', 'sans-serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',

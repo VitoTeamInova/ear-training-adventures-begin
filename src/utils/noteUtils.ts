@@ -1,6 +1,6 @@
 
 export type Note = 'Do' | 'Re' | 'Mi' | 'Fa' | 'Sol' | 'La' | 'Si';
-export type PlayableNote = 'Do' | 'Fa' | 'Sol';
+export type PlayableNote = 'Do' | 'Fa' | 'Sol' | 'HighDo';
 
 export interface NoteButton {
   note: Note;
@@ -19,7 +19,7 @@ export const NOTES: NoteButton[] = [
   { note: 'Do', isPlayable: true, number: 8 },
 ];
 
-export const PLAYABLE_NOTES: PlayableNote[] = ['Do', 'Fa', 'Sol'];
+export const PLAYABLE_NOTES: PlayableNote[] = ['Do', 'Fa', 'Sol', 'HighDo'];
 
 export interface ExerciseResult {
   date: Date;

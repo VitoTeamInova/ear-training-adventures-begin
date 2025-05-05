@@ -52,9 +52,10 @@ const useAudio = () => {
     
     // Map notes to frequencies
     const noteToFrequency: Record<PlayableNote, number> = {
-      'Do': 261.63, // C4
+      'Do': 261.63, // C4 (low Do)
       'Fa': 349.23, // F4
       'Sol': 392.00, // G4
+      'HighDo': 523.25, // C5 (high Do)
     };
     
     const audioContext = getAudioContext();

@@ -41,7 +41,15 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
     
     setAttempts(prev => prev + 1);
     
-    if (note === currentNote) {
+    // Handle high Do separately
+    if (currentNote === 'HighDo' && note === 'Do' && NOTES.indexOf(NOTES.find(n => n.note === note)!) === 7) {
+      setIsExerciseComplete(true);
+      setExercises(prev => prev + 1);
+      return;
+    }
+    
+    if ((note === currentNote) || 
+        (note === 'Do' && currentNote === 'HighDo' && NOTES.indexOf(NOTES.find(n => n.note === note)!) === 7)) {
       // Correct answer
       setIsExerciseComplete(true);
       setExercises(prev => prev + 1);
@@ -81,19 +89,24 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
           
           {/* Note buttons */}
           <div className="flex justify-center space-x-3 mb-8">
-            {NOTES.map((noteObj, index) => (
-              <button
-                key={`${noteObj.note}-${index}`}
-                className={`note-button ${noteObj.isPlayable ? 'note-button-active' : 'note-button-inactive'}`}
-                onClick={() => noteObj.isPlayable && handleNoteClick(noteObj.note)}
-                disabled={!noteObj.isPlayable || isExerciseComplete}
-              >
-                <div className="flex flex-col items-center">
-                  <div className="text-sm font-bold mb-1">{noteObj.number}</div>
-                  {noteObj.note}
-                </div>
-              </button>
-            ))}
+            {NOTES.map((noteObj, index) => {
+              const isHighDo = index === 7 && noteObj.note === 'Do';
+              const isPlayable = noteObj.isPlayable || isHighDo;
+              
+              return (
+                <button
+                  key={`${noteObj.note}-${index}`}
+                  className={`note-button ${isPlayable ? 'note-button-active' : 'note-button-inactive'}`}
+                  onClick={() => isPlayable && handleNoteClick(noteObj.note)}
+                  disabled={!isPlayable || isExerciseComplete}
+                >
+                  <div className="flex flex-col items-center">
+                    <div className="text-sm font-bold mb-1">{noteObj.number}</div>
+                    {noteObj.note}
+                  </div>
+                </button>
+              );
+            })}
           </div>
           
           {/* Status */}
