@@ -41,7 +41,35 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
     
     setAttempts(prev => prev + 1);
     
+    // Special case for LowerDo - display as Do but with different frequency
+    if (note === 'Do' && currentNote === 'LowerDo') {
+      // Wrong answer
+      setTimeout(() => {
+        if (currentNote) playNote(currentNote);
+      }, 500);
+      return;
+    }
+
+    // Normal note comparison
     if (note === currentNote) {
+      // Correct answer
+      setIsExerciseComplete(true);
+      setExercises(prev => prev + 1);
+    } else {
+      // Incorrect answer, replay the note
+      setTimeout(() => {
+        if (currentNote) playNote(currentNote);
+      }, 500);
+    }
+  };
+  
+  // Special handler for lower Do
+  const handleLowerDoClick = () => {
+    if (!currentNote || isExerciseComplete) return;
+    
+    setAttempts(prev => prev + 1);
+    
+    if (currentNote === 'LowerDo') {
       // Correct answer
       setIsExerciseComplete(true);
       setExercises(prev => prev + 1);
@@ -88,9 +116,24 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
                 onClick={() => noteObj.isPlayable && handleNoteClick(noteObj.note)}
                 disabled={!noteObj.isPlayable || isExerciseComplete}
               >
-                {noteObj.note}
+                <div className="flex flex-col items-center">
+                  <div className="text-sm font-bold mb-1">{noteObj.number}</div>
+                  {noteObj.note}
+                </div>
               </button>
             ))}
+            
+            {/* Special button for lower Do */}
+            <button
+              className="note-button note-button-active"
+              onClick={handleLowerDoClick}
+              disabled={isExerciseComplete}
+            >
+              <div className="flex flex-col items-center">
+                <div className="text-sm font-bold mb-1">0</div>
+                <div>Do↓</div>
+              </div>
+            </button>
           </div>
           
           {/* Status */}
