@@ -94,3 +94,14 @@
 .tab-active {
   @apply border-b-2 border-primary font-bold text-primary;
 }
+
+/* Staff styling */
+.staff {
+  height: 120px;
+  position: relative;
+}
+
+.staff-container {
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}

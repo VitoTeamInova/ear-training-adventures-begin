@@ -3,10 +3,28 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { NOTES, PlayableNote, getRandomPlayableNote } from '@/utils/noteUtils';
 import useAudio from '@/hooks/useAudio';
+import { Card } from '@/components/ui/card';
+import { TrebleClef, Music } from 'lucide-react';
 
 interface EarTrainingExerciseProps {
   onComplete: (exercises: number, attempts: number) => void;
 }
+
+// Map notes to their interval names from C
+const noteToInterval: Record<PlayableNote, string> = {
+  'Do': 'Unison',
+  'Fa': 'Perfect 4th',
+  'Sol': 'Perfect 5th',
+  'HighDo': 'Octave',
+};
+
+// Map notes to their position on the staff (0 = middle C line)
+const noteToStaffPosition: Record<PlayableNote, number> = {
+  'Do': 0, // Middle C (first ledger line below the staff)
+  'Fa': 3, // F (first line from bottom of staff)
+  'Sol': 4, // G (second line from bottom)
+  'HighDo': 7, // High C (third space from bottom)
+};
 
 const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete }) => {
   const [currentNote, setCurrentNote] = useState<PlayableNote | null>(null);
@@ -68,6 +86,79 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
     onComplete(exercises, attempts);
   };
 
+  // Render a music staff with notes
+  const renderMusicStaff = () => {
+    if (!currentNote || !isExerciseComplete) return null;
+    
+    const interval = noteToInterval[currentNote];
+    
+    return (
+      <Card className="p-6 mt-6 mb-8">
+        <div className="text-xl font-bold mb-4 text-center flex items-center justify-center gap-2">
+          <Music className="text-primary" />
+          <span>Interval: {interval}</span>
+        </div>
+        
+        <div className="staff-container bg-white p-4 rounded-md">
+          {/* Staff lines */}
+          <div className="staff relative h-40">
+            {/* Treble Clef */}
+            <div className="absolute left-2 top-1 text-4xl">
+              <TrebleClef className="h-32 w-10 text-gray-700" />
+            </div>
+            
+            {/* Staff lines */}
+            <div className="staff-lines">
+              {[0, 1, 2, 3, 4].map(i => (
+                <div key={i} className="h-[2px] bg-gray-700 w-full absolute" 
+                     style={{ top: `${16 + i * 10}px` }} />
+              ))}
+            </div>
+            
+            {/* Ledger line for middle C */}
+            <div className="h-[2px] bg-gray-700 w-16 absolute" 
+                 style={{ top: `${16 + 5 * 10}px`, left: '60px' }} />
+            
+            {/* Note C (reference) */}
+            <div className="absolute" style={{ top: `${16 + 5 * 10 - 8}px`, left: '60px' }}>
+              <div className="w-10 h-10 rounded-full border-2 border-gray-700 bg-white flex items-center justify-center rotate-[-20deg]">
+                <span className="text-xs font-bold">C</span>
+              </div>
+            </div>
+            
+            {/* Target Note */}
+            <div className="absolute" 
+                 style={{ 
+                   top: `${16 + (5 - noteToStaffPosition[currentNote]) * 10 - 8}px`, 
+                   left: '160px' 
+                 }}>
+              <div className="w-10 h-10 rounded-full border-2 border-primary bg-white flex items-center justify-center rotate-[-20deg] text-primary">
+                <span className="text-xs font-bold">
+                  {currentNote === 'HighDo' ? 'C' : 
+                   currentNote === 'Fa' ? 'F' : 
+                   currentNote === 'Sol' ? 'G' : 'C'}
+                </span>
+              </div>
+            </div>
+            
+            {/* Ledger line for high C if needed */}
+            {currentNote === 'HighDo' && (
+              <div className="h-[2px] bg-gray-700 w-16 absolute" 
+                   style={{ top: `${16 + (5 - noteToStaffPosition['HighDo']) * 10}px`, left: '157px' }} />
+            )}
+            
+            {/* Interval text */}
+            <div className="absolute bottom-0 w-full text-center text-sm text-gray-500">
+              C {currentNote === 'Do' ? '' : 'to'} {currentNote === 'HighDo' ? 'C' : 
+                currentNote === 'Fa' ? 'F' : 
+                currentNote === 'Sol' ? 'G' : 'C'}
+            </div>
+          </div>
+        </div>
+      </Card>
+    );
+  };
+
   return (
     <div className="container max-w-3xl mx-auto py-8 px-4">
       <div className="bg-white rounded-lg shadow-sm p-8">
@@ -83,6 +174,9 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
               Re-Play
             </Button>
           )}
+          
+          {/* Music staff visualization (shown only after successful recognition) */}
+          {isExerciseComplete && renderMusicStaff()}
           
           {/* Note buttons */}
           <div className="flex justify-center space-x-3 mb-8">
