@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { NOTES, PlayableNote, getRandomPlayableNote } from '@/utils/noteUtils';
 import useAudio from '@/hooks/useAudio';
 import { Card } from '@/components/ui/card';
-import { TrebleClef, Music } from 'lucide-react';
+import { Music } from 'lucide-react';
 
 interface EarTrainingExerciseProps {
   onComplete: (exercises: number, attempts: number) => void;
@@ -102,9 +102,15 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
         <div className="staff-container bg-white p-4 rounded-md">
           {/* Staff lines */}
           <div className="staff relative h-40">
-            {/* Treble Clef */}
+            {/* Treble Clef - Using SVG instead of the unavailable TrebleClef icon */}
             <div className="absolute left-2 top-1 text-4xl">
-              <TrebleClef className="h-32 w-10 text-gray-700" />
+              <svg className="h-32 w-10 text-gray-700" viewBox="0 0 20 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M15 5C12 8 6 14 6 22C6 30 12 32 12 32C12 32 10 28 10 22C10 16 14 12 14 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                <path d="M14 12C14 12 16 14 16 18C16 22 14 24 11 24C8 24 6 22 6 19C6 16 8 14 11 14C14 14 16 16 16 19" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                <path d="M11 24C11 24 8 28 8 34C8 40 10 46 15 50" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                <ellipse cx="6" cy="45" rx="2.5" ry="3" stroke="currentColor" strokeWidth="1.5" />
+                <ellipse cx="10" cy="54" rx="2.5" ry="3" stroke="currentColor" strokeWidth="1.5" />
+              </svg>
             </div>
             
             {/* Staff lines */}
