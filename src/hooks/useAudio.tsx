@@ -16,8 +16,8 @@ const useAudio = () => {
     console.log('Playing C chord');
     const audioContext = getAudioContext();
     
-    // C major chord frequencies (C3, E3, G3) - one octave lower
-    const frequencies = [130.81, 164.81, 196.00];
+    // C major chord frequencies (C4, E4, G4)
+    const frequencies = [261.63, 329.63, 392.00];
     
     frequencies.forEach((freq, index) => {
       const oscillator = audioContext.createOscillator();
@@ -50,12 +50,11 @@ const useAudio = () => {
   const playNote = useCallback((note: PlayableNote) => {
     console.log(`Playing note: ${note}`);
     
-    // Map notes to frequencies (one octave lower)
+    // Map notes to frequencies
     const noteToFrequency: Record<PlayableNote, number> = {
-      'Do': 130.81, // C3
-      'Fa': 174.61, // F3
-      'Sol': 196.00, // G3
-      'LowerDo': 65.41, // C2 (two octaves lower than original)
+      'Do': 261.63, // C4
+      'Fa': 349.23, // F4
+      'Sol': 392.00, // G4
     };
     
     const audioContext = getAudioContext();
