@@ -26,12 +26,35 @@ const noteToStaffPosition: Record<PlayableNote, number> = {
   'HighDo': 7, // High C (third space from bottom)
 };
 
+// Map intervals to image file names
+const intervalToImageFile: Record<string, string> = {
+  'Unison': 'Do-Do.png',
+  'Perfect 4th': 'Do-Fa.png',
+  'Perfect 5th': 'Do-Sol.png',
+  'Octave': 'Do4-Do5.png',
+};
+
 const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete }) => {
   const [currentNote, setCurrentNote] = useState<PlayableNote | null>(null);
   const [exercises, setExercises] = useState(0);
   const [attempts, setAttempts] = useState(0);
   const [isExerciseComplete, setIsExerciseComplete] = useState(false);
+  const [useImageFiles, setUseImageFiles] = useState(false);
   const { playChord, playNote } = useAudio();
+  
+  // Check if music-scores directory exists
+  useEffect(() => {
+    // We'll test for the existence of one of the files to determine if we should use images
+    fetch('/music-scores/Do-Do.png', { method: 'HEAD' })
+      .then(response => {
+        setUseImageFiles(response.ok);
+        console.log('Music scores directory found, using image files');
+      })
+      .catch(() => {
+        console.log('Music scores directory not found, using SVG visualization');
+        setUseImageFiles(false);
+      });
+  }, []);
   
   // Start a new exercise
   const startExercise = () => {
@@ -86,12 +109,37 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
     onComplete(exercises, attempts);
   };
 
-  // Render a music staff with notes
+  // Render a music staff with notes using images if available
   const renderMusicStaff = () => {
     if (!currentNote || !isExerciseComplete) return null;
     
     const interval = noteToInterval[currentNote];
     
+    if (useImageFiles) {
+      // Use image files from music-scores directory
+      return (
+        <Card className="p-6 mt-6 mb-8">
+          <div className="text-xl font-bold mb-4 text-center flex items-center justify-center gap-2">
+            <Music className="text-primary" />
+            <span>Interval: {interval}</span>
+          </div>
+          
+          <div className="staff-container bg-white p-4 rounded-md">
+            <img 
+              src={`/music-scores/${intervalToImageFile[interval]}`}
+              alt={`Musical staff showing ${interval}`}
+              className="w-full h-auto"
+              onError={(e) => {
+                console.error("Error loading music score image:", e);
+                setUseImageFiles(false); // Fallback to SVG if image fails to load
+              }}
+            />
+          </div>
+        </Card>
+      );
+    }
+    
+    // Fallback to SVG representation
     return (
       <Card className="p-6 mt-6 mb-8">
         <div className="text-xl font-bold mb-4 text-center flex items-center justify-center gap-2">
