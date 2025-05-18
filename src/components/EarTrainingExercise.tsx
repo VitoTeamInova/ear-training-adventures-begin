@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { NOTES, PlayableNote, getRandomPlayableNote } from '@/utils/noteUtils';
@@ -40,19 +39,43 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
   const [attempts, setAttempts] = useState(0);
   const [isExerciseComplete, setIsExerciseComplete] = useState(false);
   const [useImageFiles, setUseImageFiles] = useState(false);
+  const [scoresDirPath, setScoresDirPath] = useState<string | null>(null);
   const { playChord, playNote } = useAudio();
   
-  // Check if music-scores directory exists
+  // Check if music-scores directory exists (trying both possible paths)
   useEffect(() => {
-    // We'll test for the existence of one of the files to determine if we should use images
-    fetch('/music-scores/Do-Do.png', { method: 'HEAD' })
+    const possiblePaths = ['/music-scores/Do-Do.png', '/music-samples/Do-Do.png'];
+    
+    // Try the first path
+    fetch(possiblePaths[0], { method: 'HEAD' })
       .then(response => {
-        setUseImageFiles(response.ok);
-        console.log('Music scores directory found, using image files');
+        if (response.ok) {
+          console.log(`Found music scores at ${possiblePaths[0]}`);
+          setUseImageFiles(true);
+          setScoresDirPath('/music-scores');
+        } else {
+          throw new Error('First path not found');
+        }
       })
       .catch(() => {
-        console.log('Music scores directory not found, using SVG visualization');
-        setUseImageFiles(false);
+        // If first path fails, try the second path
+        console.log(`Trying alternative path: ${possiblePaths[1]}`);
+        fetch(possiblePaths[1], { method: 'HEAD' })
+          .then(response => {
+            if (response.ok) {
+              console.log(`Found music scores at ${possiblePaths[1]}`);
+              setUseImageFiles(true);
+              setScoresDirPath('/music-samples');
+            } else {
+              throw new Error('Second path not found');
+            }
+          })
+          .catch(error => {
+            console.log('Music scores directory not found in either location, using SVG visualization');
+            console.log('Error details:', error);
+            setUseImageFiles(false);
+            setScoresDirPath(null);
+          });
       });
   }, []);
   
@@ -115,7 +138,7 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
     
     const interval = noteToInterval[currentNote];
     
-    if (useImageFiles) {
+    if (useImageFiles && scoresDirPath) {
       // Use image files from music-scores directory
       return (
         <Card className="p-6 mt-6 mb-8">
@@ -126,7 +149,7 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
           
           <div className="staff-container bg-white p-4 rounded-md">
             <img 
-              src={`/music-scores/${intervalToImageFile[interval]}`}
+              src={`${scoresDirPath}/${intervalToImageFile[interval]}`}
               alt={`Musical staff showing ${interval}`}
               className="w-full h-auto"
               onError={(e) => {

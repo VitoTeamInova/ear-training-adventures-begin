@@ -1,22 +1,45 @@
-
 import { useCallback, useRef, useState, useEffect } from 'react';
 import { PlayableNote } from '../utils/noteUtils';
 
 const useAudio = () => {
   const audioContextRef = useRef<AudioContext | null>(null);
   const [useMP3Files, setUseMP3Files] = useState<boolean>(false);
+  const [soundsDirectoryPath, setSoundsDirectoryPath] = useState<string | null>(null);
 
-  // Check if piano-sounds directory exists
+  // Check if piano sounds directory exists (trying both possible directory names)
   useEffect(() => {
-    // We'll test for the existence of the C4 file to determine if we should use MP3s
-    fetch('/piano-sounds/C4.mp3', { method: 'HEAD' })
+    const possiblePaths = ['/piano-sounds/C4.mp3', '/piano-samples/C4.mp3'];
+    
+    // Try the first path
+    fetch(possiblePaths[0], { method: 'HEAD' })
       .then(response => {
-        setUseMP3Files(response.ok);
-        console.log('Piano sounds directory found, using MP3 files');
+        if (response.ok) {
+          console.log(`Found piano sounds at ${possiblePaths[0]}`);
+          setUseMP3Files(true);
+          setSoundsDirectoryPath('/piano-sounds');
+        } else {
+          throw new Error('First path not found');
+        }
       })
       .catch(() => {
-        console.log('Piano sounds directory not found, using oscillator');
-        setUseMP3Files(false);
+        // If first path fails, try the second path
+        console.log(`Trying alternative path: ${possiblePaths[1]}`);
+        fetch(possiblePaths[1], { method: 'HEAD' })
+          .then(response => {
+            if (response.ok) {
+              console.log(`Found piano sounds at ${possiblePaths[1]}`);
+              setUseMP3Files(true);
+              setSoundsDirectoryPath('/piano-samples');
+            } else {
+              throw new Error('Second path not found');
+            }
+          })
+          .catch(error => {
+            console.log('Piano sounds directory not found in either location, using oscillator');
+            console.log('Error details:', error);
+            setUseMP3Files(false);
+            setSoundsDirectoryPath(null);
+          });
       });
   }, []);
 
@@ -28,16 +51,24 @@ const useAudio = () => {
   };
 
   // Play audio using an MP3 file
-  const playAudioFile = useCallback((filePath: string) => {
+  const playAudioFile = useCallback((fileName: string) => {
+    if (!soundsDirectoryPath) {
+      console.error('Sound directory path not set');
+      return;
+    }
+    
+    const filePath = `${soundsDirectoryPath}/${fileName}`;
+    console.log(`Attempting to play audio file: ${filePath}`);
+    
     const audio = new Audio(filePath);
     audio.play().catch(error => {
-      console.error('Error playing audio file:', error);
+      console.error(`Error playing audio file ${filePath}:`, error);
       // Fallback to oscillator if there's an error with the audio file
-      if (filePath.includes('C4-Chord')) {
+      if (fileName.includes('C4-Chord')) {
         playChordWithOscillator();
       } else {
         // Extract note from filePath and play with oscillator
-        const note = filePath.split('/').pop()?.split('.')[0];
+        const note = fileName.split('/').pop()?.split('.')[0];
         if (note) {
           const noteMap: Record<string, PlayableNote> = {
             'C4': 'Do',
@@ -52,7 +83,7 @@ const useAudio = () => {
         }
       }
     });
-  }, []);
+  }, [soundsDirectoryPath]);
 
   const playChordWithOscillator = useCallback(() => {
     console.log('Playing C chord with oscillator');
@@ -127,19 +158,19 @@ const useAudio = () => {
 
   // Play chord with either MP3 or oscillator
   const playChord = useCallback(() => {
-    console.log('Playing C chord');
-    if (useMP3Files) {
-      playAudioFile('/piano-sounds/C4-Chord.mp3');
+    console.log('Playing C chord, useMP3Files:', useMP3Files, 'soundsDirectoryPath:', soundsDirectoryPath);
+    if (useMP3Files && soundsDirectoryPath) {
+      playAudioFile('C4-Chord.mp3');
     } else {
       playChordWithOscillator();
     }
-  }, [useMP3Files, playAudioFile]);
+  }, [useMP3Files, playAudioFile, soundsDirectoryPath]);
 
   // Play note with either MP3 or oscillator
   const playNote = useCallback((note: PlayableNote) => {
-    console.log(`Playing note: ${note}`);
+    console.log(`Playing note: ${note}, useMP3Files:`, useMP3Files, 'soundsDirectoryPath:', soundsDirectoryPath);
     
-    if (useMP3Files) {
+    if (useMP3Files && soundsDirectoryPath) {
       // Map notes to file names
       const noteToFileName: Record<PlayableNote, string> = {
         'Do': 'C4.mp3',
@@ -148,11 +179,11 @@ const useAudio = () => {
         'HighDo': 'C5.mp3',
       };
       
-      playAudioFile(`/piano-sounds/${noteToFileName[note]}`);
+      playAudioFile(noteToFileName[note]);
     } else {
       playNoteWithOscillator(note);
     }
-  }, [useMP3Files, playAudioFile]);
+  }, [useMP3Files, playAudioFile, soundsDirectoryPath]);
 
   return { playChord, playNote };
 };
