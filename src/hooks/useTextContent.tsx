@@ -29,8 +29,14 @@ const useTextContent = (tabId: string) => {
         
         if (response.ok) {
           const text = await response.text();
-          setContent(text);
-          console.log(`Loaded content from ${filePath}`);
+          if (text.trim().length > 0) {
+            setContent(text);
+            console.log(`Loaded content from ${filePath}`);
+          } else {
+            console.log(`File is empty: ${filePath}`);
+            setError(`${fileName} is empty`);
+            setContent(null);
+          }
         } else {
           console.log(`File not found: ${filePath}`);
           setError(`Failed to load ${fileName}`);

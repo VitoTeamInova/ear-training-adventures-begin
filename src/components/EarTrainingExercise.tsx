@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { NOTES, PlayableNote, getRandomPlayableNote } from '@/utils/noteUtils';
@@ -24,7 +23,7 @@ const noteToStaffPosition: Record<PlayableNote, number> = {
   'Do': 0, // Middle C (first ledger line below the staff)
   'Fa': 3, // F (first line from bottom of staff)
   'Sol': 4, // G (second line from bottom)
-  'HighDo': 7, // High C (third space from bottom)
+  'HighDo': 7, // High C (third space from bottom),
 };
 
 // Map intervals to image file names
@@ -42,7 +41,8 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
   const [isExerciseComplete, setIsExerciseComplete] = useState(false);
   const [useImageFiles, setUseImageFiles] = useState(false);
   const [scoresDirPath, setScoresDirPath] = useState<string | null>(null);
-  const { playChord, playNote, audioStatus } = useAudio();
+  const [isLoading, setIsLoading] = useState(true);
+  const { playChord, playNote, audioStatus, audioFilesPreloaded } = useAudio();
   
   // Check if music-scores directory exists
   useEffect(() => {
@@ -68,24 +68,29 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
   }, []);
   
   // Start a new exercise
-  const startExercise = () => {
+  const startExercise = useCallback(() => {
     const note = getRandomPlayableNote();
     setCurrentNote(note);
     setIsExerciseComplete(false);
     
     // Play C chord followed by the target note
+    console.log("Starting exercise, playing chord and note");
     playChord();
     
     // Play the random note after a short delay
     setTimeout(() => {
       if (note) playNote(note);
     }, 1500);
-  };
+  }, [playChord, playNote]);
   
-  // Initialize first exercise
+  // Wait for audio files to be preloaded before starting
   useEffect(() => {
-    startExercise();
-  }, []);
+    if (audioFilesPreloaded) {
+      console.log("Audio files preloaded, starting exercise");
+      setIsLoading(false);
+      startExercise();
+    }
+  }, [audioFilesPreloaded, startExercise]);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -95,14 +100,12 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
       const key = event.key.toLowerCase();
       
       switch (key) {
-        case 'd':
         case 'c':
           handleNoteClick('Do');
           break;
         case 'f':
           handleNoteClick('Fa');
           break;
-        case 's':
         case 'g':
           handleNoteClick('Sol');
           break;
@@ -260,6 +263,17 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
     );
   };
 
+  if (isLoading) {
+    return (
+      <div className="container max-w-3xl mx-auto py-8 px-4">
+        <div className="bg-white rounded-lg shadow-sm p-8 flex justify-center items-center flex-col">
+          <div className="animate-pulse mb-4">Loading exercise...</div>
+          <p className="text-sm text-gray-500">Preparing audio files...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container max-w-3xl mx-auto py-8 px-4">
       <div className="bg-white rounded-lg shadow-sm p-8">
@@ -270,7 +284,7 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
           {/* Keyboard shortcuts info */}
           <div className="bg-secondary/10 p-2 rounded-md mb-4 flex items-center justify-center gap-2">
             <Keyboard size={16} />
-            <span className="text-sm">Keyboard shortcuts: D/C for Do, F for Fa, S/G for Sol</span>
+            <span className="text-sm">Keyboard shortcuts: C for Do, F for Fa, G for Sol</span>
           </div>
           
           <div className="flex justify-center gap-3 mb-6">

@@ -18,6 +18,10 @@ const useAudio = () => {
     soundsPath: null,
     lastError: null
   });
+  
+  // Preload audio files
+  const [audioFilesPreloaded, setAudioFilesPreloaded] = useState(false);
+  const audioCache = useRef<Map<string, HTMLAudioElement>>(new Map());
 
   // Check available sound directories
   useEffect(() => {
@@ -36,12 +40,48 @@ const useAudio = () => {
             soundsPath: path,
             lastError: null
           });
+          
+          // Preload audio files
+          await preloadAudioFiles(path);
           return true;
         } 
         return false;
       } catch (error) {
         console.log(`Error checking ${path}:`, error);
         return false;
+      }
+    };
+    
+    const preloadAudioFiles = async (path: string) => {
+      console.log("Preloading audio files...");
+      const filesToPreload = ['C4.mp3', 'F4.mp3', 'G4.mp3', 'C5.mp3', 'C4-Chord.mp3'];
+      
+      try {
+        await Promise.all(filesToPreload.map(fileName => {
+          return new Promise<void>((resolve) => {
+            const audio = new Audio(`${path}/${fileName}`);
+            audio.preload = 'auto';
+            
+            audio.oncanplaythrough = () => {
+              console.log(`Preloaded ${fileName}`);
+              audioCache.current.set(fileName, audio);
+              resolve();
+            };
+            
+            audio.onerror = () => {
+              console.error(`Failed to preload ${fileName}`);
+              resolve(); // Continue even if one file fails
+            };
+            
+            // Start loading
+            audio.load();
+          });
+        }));
+        
+        console.log("Audio files preloaded");
+        setAudioFilesPreloaded(true);
+      } catch (error) {
+        console.error("Error preloading audio files:", error);
       }
     };
     
@@ -60,6 +100,7 @@ const useAudio = () => {
             soundsPath: null,
             lastError: 'Piano sounds directory not found'
           });
+          setAudioFilesPreloaded(true); // Mark as done even if we're using oscillator
         }
       }
     };
@@ -81,40 +122,58 @@ const useAudio = () => {
       return;
     }
     
-    const filePath = `${soundsDirectoryPath}/${fileName}`;
-    console.log(`Attempting to play audio file: ${filePath}`);
+    console.log(`Attempting to play audio file: ${fileName}`);
     
-    const audio = new Audio(filePath);
-    audio.play().catch(error => {
-      console.error(`Error playing audio file ${filePath}:`, error);
+    // Check if the audio is in cache
+    const cachedAudio = audioCache.current.get(fileName);
+    
+    if (cachedAudio) {
+      // Reset and play the cached audio
+      cachedAudio.currentTime = 0;
+      cachedAudio.play().catch(error => {
+        console.error(`Error playing cached audio file ${fileName}:`, error);
+        fallbackToOscillator(fileName);
+      });
+    } else {
+      // If not cached (shouldn't happen after preloading), create a new Audio object
+      const filePath = `${soundsDirectoryPath}/${fileName}`;
+      console.log(`File not cached, loading from: ${filePath}`);
       
-      // Update status with error info
-      setAudioStatus(prev => ({
-        ...prev,
-        lastError: `${fileName} not found, oscillator sound being used`
-      }));
-      
-      // Fallback to oscillator
-      if (fileName.includes('C4-Chord')) {
-        playChordWithOscillator();
-      } else {
-        // Extract note from filePath and play with oscillator
-        const note = fileName.split('/').pop()?.split('.')[0];
-        if (note) {
-          const noteMap: Record<string, PlayableNote> = {
-            'C4': 'Do',
-            'F4': 'Fa',
-            'G4': 'Sol',
-            'C5': 'HighDo'
-          };
-          const playableNote = noteMap[note] as PlayableNote;
-          if (playableNote) {
-            playNoteWithOscillator(playableNote);
-          }
+      const audio = new Audio(filePath);
+      audio.play().catch(error => {
+        console.error(`Error playing audio file ${filePath}:`, error);
+        fallbackToOscillator(fileName);
+      });
+    }
+  }, [soundsDirectoryPath]);
+  
+  const fallbackToOscillator = useCallback((fileName: string) => {
+    // Update status with error info
+    setAudioStatus(prev => ({
+      ...prev,
+      lastError: `${fileName} not found, oscillator sound being used`
+    }));
+    
+    // Fallback to oscillator
+    if (fileName.includes('C4-Chord')) {
+      playChordWithOscillator();
+    } else {
+      // Extract note from fileName and play with oscillator
+      const note = fileName.split('/').pop()?.split('.')[0];
+      if (note) {
+        const noteMap: Record<string, PlayableNote> = {
+          'C4': 'Do',
+          'F4': 'Fa',
+          'G4': 'Sol',
+          'C5': 'HighDo'
+        };
+        const playableNote = noteMap[note] as PlayableNote;
+        if (playableNote) {
+          playNoteWithOscillator(playableNote);
         }
       }
-    });
-  }, [soundsDirectoryPath]);
+    }
+  }, []);
 
   const playChordWithOscillator = useCallback(() => {
     console.log('Playing C chord with oscillator');
@@ -216,7 +275,7 @@ const useAudio = () => {
     }
   }, [useMP3Files, playAudioFile, soundsDirectoryPath]);
 
-  return { playChord, playNote, audioStatus };
+  return { playChord, playNote, audioStatus, audioFilesPreloaded };
 };
 
 export default useAudio;

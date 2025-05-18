@@ -5,6 +5,17 @@ import { FileText } from 'lucide-react';
 const TabContent: React.FC<{ tabId: string }> = ({ tabId }) => {
   const { content, isLoading, error } = useTextContent(tabId);
   
+  // If loading, show loading state
+  if (isLoading) {
+    return (
+      <div className="container max-w-3xl mx-auto py-8 px-4">
+        <div className="bg-white rounded-lg shadow-sm p-8 flex justify-center">
+          <p>Loading content...</p>
+        </div>
+      </div>
+    );
+  }
+  
   // If we have content from a text file, display it
   if (content) {
     return (
@@ -16,17 +27,6 @@ const TabContent: React.FC<{ tabId: string }> = ({ tabId }) => {
               <p key={index}>{paragraph}</p>
             ))}
           </div>
-        </div>
-      </div>
-    );
-  }
-  
-  // If loading, show loading state
-  if (isLoading) {
-    return (
-      <div className="container max-w-3xl mx-auto py-8 px-4">
-        <div className="bg-white rounded-lg shadow-sm p-8 flex justify-center">
-          <p>Loading content...</p>
         </div>
       </div>
     );
@@ -102,6 +102,14 @@ const TabContent: React.FC<{ tabId: string }> = ({ tabId }) => {
               <li>Seventh chords (1-3-5-7)</li>
             </ul>
             <p>In these exercises, we start with a C major chord (Do-Mi-Sol) to establish the tonal center.</p>
+          </div>
+        );
+      case 'landing':
+        return (
+          <div className="prose max-w-none">
+            <h1>Welcome to Ear Training Adventures</h1>
+            <p>Welcome to Ear Training Adventures! This interactive application will help you develop your musical ear through fun and engaging exercises.</p>
+            <p>Start your journey by clicking the "Start Exercise" button, or explore the other tabs to learn more about ear training concepts.</p>
           </div>
         );
       default:
