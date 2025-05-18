@@ -4,6 +4,7 @@ import { NOTES, PlayableNote, getRandomPlayableNote } from '@/utils/noteUtils';
 import useAudio from '@/hooks/useAudio';
 import { Card } from '@/components/ui/card';
 import { Music } from 'lucide-react';
+import { MUSIC_SCORES_DIRECTORY } from '@/utils/constants';
 
 interface EarTrainingExerciseProps {
   onComplete: (exercises: number, attempts: number) => void;
@@ -42,40 +43,26 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
   const [scoresDirPath, setScoresDirPath] = useState<string | null>(null);
   const { playChord, playNote } = useAudio();
   
-  // Check if music-scores directory exists (trying both possible paths)
+  // Check if music-scores directory exists
   useEffect(() => {
-    const possiblePaths = ['/music-scores/Do-Do.png', '/music-samples/Do-Do.png'];
+    const testPath = `${MUSIC_SCORES_DIRECTORY}/Do-Do.png`;
     
-    // Try the first path
-    fetch(possiblePaths[0], { method: 'HEAD' })
+    console.log(`Checking for music scores at: ${testPath}`);
+    fetch(testPath, { method: 'HEAD' })
       .then(response => {
         if (response.ok) {
-          console.log(`Found music scores at ${possiblePaths[0]}`);
+          console.log(`Found music scores at ${MUSIC_SCORES_DIRECTORY}`);
           setUseImageFiles(true);
-          setScoresDirPath('/music-scores');
+          setScoresDirPath(MUSIC_SCORES_DIRECTORY);
         } else {
-          throw new Error('First path not found');
+          throw new Error('Music scores directory not found');
         }
       })
-      .catch(() => {
-        // If first path fails, try the second path
-        console.log(`Trying alternative path: ${possiblePaths[1]}`);
-        fetch(possiblePaths[1], { method: 'HEAD' })
-          .then(response => {
-            if (response.ok) {
-              console.log(`Found music scores at ${possiblePaths[1]}`);
-              setUseImageFiles(true);
-              setScoresDirPath('/music-samples');
-            } else {
-              throw new Error('Second path not found');
-            }
-          })
-          .catch(error => {
-            console.log('Music scores directory not found in either location, using SVG visualization');
-            console.log('Error details:', error);
-            setUseImageFiles(false);
-            setScoresDirPath(null);
-          });
+      .catch(error => {
+        console.log('Music scores directory not found, using SVG visualization');
+        console.log('Error details:', error);
+        setUseImageFiles(false);
+        setScoresDirPath(null);
       });
   }, []);
   

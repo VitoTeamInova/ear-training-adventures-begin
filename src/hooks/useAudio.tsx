@@ -1,45 +1,32 @@
 import { useCallback, useRef, useState, useEffect } from 'react';
 import { PlayableNote } from '../utils/noteUtils';
+import { PIANO_SOUNDS_DIRECTORY } from '../utils/constants';
 
 const useAudio = () => {
   const audioContextRef = useRef<AudioContext | null>(null);
   const [useMP3Files, setUseMP3Files] = useState<boolean>(false);
   const [soundsDirectoryPath, setSoundsDirectoryPath] = useState<string | null>(null);
 
-  // Check if piano sounds directory exists (trying both possible directory names)
+  // Check if piano sounds directory exists
   useEffect(() => {
-    const possiblePaths = ['/piano-sounds/C4.mp3', '/piano-samples/C4.mp3'];
+    const testPath = `${PIANO_SOUNDS_DIRECTORY}/C4.mp3`;
     
-    // Try the first path
-    fetch(possiblePaths[0], { method: 'HEAD' })
+    console.log(`Checking for piano sounds at: ${testPath}`);
+    fetch(testPath, { method: 'HEAD' })
       .then(response => {
         if (response.ok) {
-          console.log(`Found piano sounds at ${possiblePaths[0]}`);
+          console.log(`Found piano sounds at ${PIANO_SOUNDS_DIRECTORY}`);
           setUseMP3Files(true);
-          setSoundsDirectoryPath('/piano-sounds');
+          setSoundsDirectoryPath(PIANO_SOUNDS_DIRECTORY);
         } else {
-          throw new Error('First path not found');
+          throw new Error('Piano sounds directory not found');
         }
       })
-      .catch(() => {
-        // If first path fails, try the second path
-        console.log(`Trying alternative path: ${possiblePaths[1]}`);
-        fetch(possiblePaths[1], { method: 'HEAD' })
-          .then(response => {
-            if (response.ok) {
-              console.log(`Found piano sounds at ${possiblePaths[1]}`);
-              setUseMP3Files(true);
-              setSoundsDirectoryPath('/piano-samples');
-            } else {
-              throw new Error('Second path not found');
-            }
-          })
-          .catch(error => {
-            console.log('Piano sounds directory not found in either location, using oscillator');
-            console.log('Error details:', error);
-            setUseMP3Files(false);
-            setSoundsDirectoryPath(null);
-          });
+      .catch(error => {
+        console.log('Piano sounds directory not found, using oscillator');
+        console.log('Error details:', error);
+        setUseMP3Files(false);
+        setSoundsDirectoryPath(null);
       });
   }, []);
 
