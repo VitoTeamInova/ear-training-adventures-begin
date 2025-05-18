@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { NOTES, PlayableNote, getRandomPlayableNote } from '@/utils/noteUtils';
 import useAudio from '@/hooks/useAudio';
 import { Card } from '@/components/ui/card';
-import { Music } from 'lucide-react';
+import { Music, Keyboard } from 'lucide-react';
 import { MUSIC_SCORES_DIRECTORY } from '@/utils/constants';
 
 interface EarTrainingExerciseProps {
@@ -41,7 +42,7 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
   const [isExerciseComplete, setIsExerciseComplete] = useState(false);
   const [useImageFiles, setUseImageFiles] = useState(false);
   const [scoresDirPath, setScoresDirPath] = useState<string | null>(null);
-  const { playChord, playNote } = useAudio();
+  const { playChord, playNote, audioStatus } = useAudio();
   
   // Check if music-scores directory exists
   useEffect(() => {
@@ -85,9 +86,39 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
   useEffect(() => {
     startExercise();
   }, []);
+
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (isExerciseComplete) return;
+      
+      const key = event.key.toLowerCase();
+      
+      switch (key) {
+        case 'd':
+        case 'c':
+          handleNoteClick('Do');
+          break;
+        case 'f':
+          handleNoteClick('Fa');
+          break;
+        case 's':
+        case 'g':
+          handleNoteClick('Sol');
+          break;
+        default:
+          break;
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isExerciseComplete, currentNote]);
   
   // Handle note button click
-  const handleNoteClick = (note: string) => {
+  const handleNoteClick = useCallback((note: string) => {
     if (!currentNote || isExerciseComplete) return;
     
     setAttempts(prev => prev + 1);
@@ -107,7 +138,7 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
         if (currentNote) playNote(currentNote);
       }, 500);
     }
-  };
+  }, [currentNote, isExerciseComplete, playNote]);
   
   // Handle continue button click
   const handleContinue = () => {
@@ -117,6 +148,12 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
   // Handle quit button click
   const handleQuit = () => {
     onComplete(exercises, attempts);
+  };
+
+  // Handle show answer button click
+  const handleShowAnswer = () => {
+    setIsExerciseComplete(true);
+    // Don't increment exercises count since user used the answer button
   };
 
   // Render a music staff with notes using images if available
@@ -230,14 +267,31 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
           <h2 className="text-2xl font-bold text-primary mb-4">Ear Training Exercise</h2>
           <p className="mb-6">Listen to the chord followed by a single note, then click on the note you hear.</p>
           
-          {!isExerciseComplete && (
-            <Button 
-              onClick={() => currentNote && playNote(currentNote)} 
-              className="bg-secondary hover:bg-secondary/90 mb-6"
-            >
-              Re-Play
-            </Button>
-          )}
+          {/* Keyboard shortcuts info */}
+          <div className="bg-secondary/10 p-2 rounded-md mb-4 flex items-center justify-center gap-2">
+            <Keyboard size={16} />
+            <span className="text-sm">Keyboard shortcuts: D/C for Do, F for Fa, S/G for Sol</span>
+          </div>
+          
+          <div className="flex justify-center gap-3 mb-6">
+            {!isExerciseComplete && (
+              <>
+                <Button 
+                  onClick={() => currentNote && playNote(currentNote)} 
+                  className="bg-secondary hover:bg-secondary/90"
+                >
+                  Re-Play
+                </Button>
+                
+                <Button 
+                  onClick={handleShowAnswer}
+                  className="bg-secondary/70 hover:bg-secondary/60"
+                >
+                  Answer
+                </Button>
+              </>
+            )}
+          </div>
           
           {/* Music staff visualization (shown only after successful recognition) */}
           {isExerciseComplete && renderMusicStaff()}
@@ -287,6 +341,18 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
               </Button>
             </div>
           )}
+
+          {/* Sound source indicator */}
+          <div className="mt-6 pt-4 border-t border-gray-200 text-sm text-gray-500">
+            {audioStatus.usingMp3 ? (
+              <p>Piano sounds being used for this exercise.</p>
+            ) : (
+              <p>Oscillator sounds being used for this exercise.</p>
+            )}
+            {audioStatus.lastError && (
+              <p className="text-amber-600 mt-1">{audioStatus.lastError}</p>
+            )}
+          </div>
         </div>
       </div>
     </div>

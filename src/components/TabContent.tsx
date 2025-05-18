@@ -1,8 +1,38 @@
 
+import useTextContent from '@/hooks/useTextContent';
+import { FileText } from 'lucide-react';
+
 const TabContent: React.FC<{ tabId: string }> = ({ tabId }) => {
-  // This component will be populated with real content later
-  // For now, we'll provide placeholder content
+  const { content, isLoading, error } = useTextContent(tabId);
   
+  // If we have content from a text file, display it
+  if (content) {
+    return (
+      <div className="container max-w-3xl mx-auto py-8 px-4">
+        <div className="bg-white rounded-lg shadow-sm p-8">
+          <div className="prose max-w-none">
+            {/* Split content by line breaks and add paragraph tags */}
+            {content.split('\n\n').map((paragraph, index) => (
+              <p key={index}>{paragraph}</p>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // If loading, show loading state
+  if (isLoading) {
+    return (
+      <div className="container max-w-3xl mx-auto py-8 px-4">
+        <div className="bg-white rounded-lg shadow-sm p-8 flex justify-center">
+          <p>Loading content...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // If there was an error loading the text file or no file exists, show default content
   const getTabContent = () => {
     switch (tabId) {
       case 'why-ear-training':
@@ -82,6 +112,12 @@ const TabContent: React.FC<{ tabId: string }> = ({ tabId }) => {
   return (
     <div className="container max-w-3xl mx-auto py-8 px-4">
       <div className="bg-white rounded-lg shadow-sm p-8">
+        {error && (
+          <div className="mb-4 p-2 bg-amber-50 border border-amber-200 rounded text-sm text-amber-700 flex items-center gap-2">
+            <FileText size={16} />
+            <span>{error} - Using default content</span>
+          </div>
+        )}
         {getTabContent()}
       </div>
     </div>

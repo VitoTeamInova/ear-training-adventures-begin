@@ -1,33 +1,70 @@
+
 import { useCallback, useRef, useState, useEffect } from 'react';
 import { PlayableNote } from '../utils/noteUtils';
-import { PIANO_SOUNDS_DIRECTORY } from '../utils/constants';
+import { PIANO_SOUNDS_DIRECTORY, PIANO_SOUNDS_DIRECTORY_ALT } from '../utils/constants';
+
+export interface AudioStatus {
+  usingMp3: boolean;
+  soundsPath: string | null;
+  lastError: string | null;
+}
 
 const useAudio = () => {
   const audioContextRef = useRef<AudioContext | null>(null);
   const [useMP3Files, setUseMP3Files] = useState<boolean>(false);
   const [soundsDirectoryPath, setSoundsDirectoryPath] = useState<string | null>(null);
+  const [audioStatus, setAudioStatus] = useState<AudioStatus>({
+    usingMp3: false,
+    soundsPath: null,
+    lastError: null
+  });
 
-  // Check if piano sounds directory exists
+  // Check available sound directories
   useEffect(() => {
-    const testPath = `${PIANO_SOUNDS_DIRECTORY}/C4.mp3`;
-    
-    console.log(`Checking for piano sounds at: ${testPath}`);
-    fetch(testPath, { method: 'HEAD' })
-      .then(response => {
+    const checkDirectory = async (path: string) => {
+      try {
+        const testPath = `${path}/C4.mp3`;
+        console.log(`Checking for piano sounds at: ${testPath}`);
+        
+        const response = await fetch(testPath, { method: 'HEAD' });
         if (response.ok) {
-          console.log(`Found piano sounds at ${PIANO_SOUNDS_DIRECTORY}`);
+          console.log(`Found piano sounds at ${path}`);
           setUseMP3Files(true);
-          setSoundsDirectoryPath(PIANO_SOUNDS_DIRECTORY);
-        } else {
-          throw new Error('Piano sounds directory not found');
+          setSoundsDirectoryPath(path);
+          setAudioStatus({
+            usingMp3: true,
+            soundsPath: path,
+            lastError: null
+          });
+          return true;
+        } 
+        return false;
+      } catch (error) {
+        console.log(`Error checking ${path}:`, error);
+        return false;
+      }
+    };
+    
+    const checkDirectories = async () => {
+      // Try with hyphen version first
+      const foundInMain = await checkDirectory(PIANO_SOUNDS_DIRECTORY);
+      if (!foundInMain) {
+        // Try with underscore version if first one failed
+        const foundInAlt = await checkDirectory(PIANO_SOUNDS_DIRECTORY_ALT);
+        if (!foundInAlt) {
+          console.log('Piano sounds directories not found, using oscillator');
+          setUseMP3Files(false);
+          setSoundsDirectoryPath(null);
+          setAudioStatus({
+            usingMp3: false,
+            soundsPath: null,
+            lastError: 'Piano sounds directory not found'
+          });
         }
-      })
-      .catch(error => {
-        console.log('Piano sounds directory not found, using oscillator');
-        console.log('Error details:', error);
-        setUseMP3Files(false);
-        setSoundsDirectoryPath(null);
-      });
+      }
+    };
+    
+    checkDirectories();
   }, []);
 
   const getAudioContext = () => {
@@ -50,7 +87,14 @@ const useAudio = () => {
     const audio = new Audio(filePath);
     audio.play().catch(error => {
       console.error(`Error playing audio file ${filePath}:`, error);
-      // Fallback to oscillator if there's an error with the audio file
+      
+      // Update status with error info
+      setAudioStatus(prev => ({
+        ...prev,
+        lastError: `${fileName} not found, oscillator sound being used`
+      }));
+      
+      // Fallback to oscillator
       if (fileName.includes('C4-Chord')) {
         playChordWithOscillator();
       } else {
@@ -172,7 +216,7 @@ const useAudio = () => {
     }
   }, [useMP3Files, playAudioFile, soundsDirectoryPath]);
 
-  return { playChord, playNote };
+  return { playChord, playNote, audioStatus };
 };
 
 export default useAudio;
