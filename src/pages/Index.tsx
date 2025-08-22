@@ -10,7 +10,7 @@ import useProgress from '@/hooks/useProgress';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('landing');
-  const [isExerciseActive, setIsExerciseActive] = useState(false);
+  const [isExerciseActive, setIsExerciseActive] = useState(true);
   const [showResults, setShowResults] = useState(false);
   const [exerciseStats, setExerciseStats] = useState({ exercises: 0, attempts: 0 });
   const { results, saveResult } = useProgress();
