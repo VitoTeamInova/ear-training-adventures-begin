@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { NOTES, PlayableNote, getRandomPlayableNote } from '@/utils/noteUtils';
@@ -28,10 +29,10 @@ const noteToStaffPosition: Record<PlayableNote, number> = {
 
 // Map intervals to image file names
 const intervalToImageFile: Record<string, string> = {
-  'Unison': 'Do-Do.png',
-  'Perfect 4th': 'Do-Fa.png',
-  'Perfect 5th': 'Do-Sol.png',
-  'Octave': 'Do4-Do5.png',
+  'Unison': 'DoDo.png',
+  'Perfect 4th': 'DoFa.png',
+  'Perfect 5th': 'DoSol.png',
+  'Octave': 'DoDo.png',
 };
 
 const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete }) => {
@@ -39,6 +40,7 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
   const [exercises, setExercises] = useState(0);
   const [attempts, setAttempts] = useState(0);
   const [isExerciseComplete, setIsExerciseComplete] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
   const [useImageFiles, setUseImageFiles] = useState(false);
   const [scoresDirPath, setScoresDirPath] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,7 +48,7 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
   
   // Check if music-scores directory exists
   useEffect(() => {
-    const testPath = `${MUSIC_SCORES_DIRECTORY}/Do-Do.png`;
+    const testPath = `${MUSIC_SCORES_DIRECTORY}/DoDo.png`;
     
     console.log(`Checking for music scores at: ${testPath}`);
     fetch(testPath, { method: 'HEAD' })
@@ -72,6 +74,7 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
     const note = getRandomPlayableNote();
     setCurrentNote(note);
     setIsExerciseComplete(false);
+    setHasStarted(true);
     
     // Play C chord followed by the target note
     console.log("Starting exercise, playing chord and note");
@@ -83,19 +86,18 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
     }, 1500);
   }, [playChord, playNote]);
   
-  // Wait for audio files to be preloaded before starting
+  // Wait for audio files to be preloaded before being ready
   useEffect(() => {
     if (audioFilesPreloaded) {
-      console.log("Audio files preloaded, starting exercise");
+      console.log("Audio files preloaded, ready to start");
       setIsLoading(false);
-      startExercise();
     }
-  }, [audioFilesPreloaded, startExercise]);
+  }, [audioFilesPreloaded]);
 
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (isExerciseComplete) return;
+      if (isExerciseComplete || !hasStarted) return;
       
       const key = event.key.toLowerCase();
       
@@ -118,11 +120,11 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isExerciseComplete, currentNote]);
+  }, [isExerciseComplete, currentNote, hasStarted]);
   
   // Handle note button click
   const handleNoteClick = useCallback((note: string) => {
-    if (!currentNote || isExerciseComplete) return;
+    if (!currentNote || isExerciseComplete || !hasStarted) return;
     
     setAttempts(prev => prev + 1);
     
@@ -141,7 +143,7 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
         if (currentNote) playNote(currentNote);
       }, 500);
     }
-  }, [currentNote, isExerciseComplete, playNote]);
+  }, [currentNote, isExerciseComplete, playNote, hasStarted]);
   
   // Handle continue button click
   const handleContinue = () => {
@@ -157,6 +159,21 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
   const handleShowAnswer = () => {
     setIsExerciseComplete(true);
     // Don't increment exercises count since user used the answer button
+  };
+
+  // Handle start button click
+  const handleStart = () => {
+    startExercise();
+  };
+
+  // Handle replay button click
+  const handleReplay = () => {
+    if (currentNote) {
+      playChord();
+      setTimeout(() => {
+        if (currentNote) playNote(currentNote);
+      }, 1500);
+    }
   };
 
   // Render a music staff with notes using images if available
@@ -288,21 +305,32 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
           </div>
           
           <div className="flex justify-center gap-3 mb-6">
-            {!isExerciseComplete && (
+            {!hasStarted ? (
+              <Button 
+                onClick={handleStart} 
+                className="bg-primary hover:bg-primary/90"
+              >
+                Start
+              </Button>
+            ) : (
               <>
-                <Button 
-                  onClick={() => currentNote && playNote(currentNote)} 
-                  className="bg-secondary hover:bg-secondary/90"
-                >
-                  Re-Play
-                </Button>
-                
-                <Button 
-                  onClick={handleShowAnswer}
-                  className="bg-secondary/70 hover:bg-secondary/60"
-                >
-                  Answer
-                </Button>
+                {!isExerciseComplete && (
+                  <>
+                    <Button 
+                      onClick={handleReplay} 
+                      className="bg-secondary hover:bg-secondary/90"
+                    >
+                      Re-Play
+                    </Button>
+                    
+                    <Button 
+                      onClick={handleShowAnswer}
+                      className="bg-secondary/70 hover:bg-secondary/60"
+                    >
+                      Answer
+                    </Button>
+                  </>
+                )}
               </>
             )}
           </div>
@@ -321,7 +349,7 @@ const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete })
                   key={`${noteObj.note}-${index}`}
                   className={`note-button ${isPlayable ? 'note-button-active' : 'note-button-inactive'}`}
                   onClick={() => isPlayable && handleNoteClick(noteObj.note)}
-                  disabled={!isPlayable || isExerciseComplete}
+                  disabled={!isPlayable || isExerciseComplete || !hasStarted}
                 >
                   <div className="flex flex-col items-center">
                     <div className="text-sm font-bold mb-1">{noteObj.number}</div>
