@@ -1,7 +1,7 @@
 
 // Directory paths for audio and visual resources
-export const PIANO_SOUNDS_DIRECTORY = '/piano-sounds';
-export const PIANO_SOUNDS_DIRECTORY_ALT = '/piano_sounds'; // Alternative directory with underscore
+export const PIANO_SOUNDS_DIRECTORY = '/piano_sounds'; // Preferred directory with underscore
+export const PIANO_SOUNDS_DIRECTORY_ALT = '/piano-sounds'; // Alternative directory with hyphen
 export const MUSIC_SCORES_DIRECTORY = '/music-scores';
 export const TEXT_CONTENT_DIRECTORY = ''; // Root of public folder
 
