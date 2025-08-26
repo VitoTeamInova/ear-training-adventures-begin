@@ -6,6 +6,8 @@ import EarTrainingExercise from '@/components/EarTrainingExercise';
 import ResultsSummary from '@/components/ResultsSummary';
 import YourProgress from '@/components/YourProgress';
 import TabContent from '@/components/TabContent';
+import Footer from '@/components/Footer';
+import ConfigurationPanel from '@/components/ConfigurationPanel';
 import useProgress from '@/hooks/useProgress';
 
 const Index = () => {

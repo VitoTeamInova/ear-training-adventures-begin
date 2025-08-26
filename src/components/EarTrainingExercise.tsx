@@ -29,10 +29,10 @@ const noteToStaffPosition: Record<PlayableNote, number> = {
 
 // Map intervals to image file names
 const intervalToImageFile: Record<string, string> = {
-  'Unison': 'DoDo.png',
-  'Perfect 4th': 'DoFa.png',
-  'Perfect 5th': 'DoSol.png',
-  'Octave': 'DoDo.png',
+  'Unison': 'Do-Do-1.png',
+  'Perfect 4th': 'Do-Fa-1.png',
+  'Perfect 5th': 'Do-Sol-1.png',
+  'Octave': 'Do4-Do5-1.png',
 };
 
 const EarTrainingExercise: React.FC<EarTrainingExerciseProps> = ({ onComplete }) => {
