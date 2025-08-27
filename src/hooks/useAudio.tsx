@@ -29,10 +29,14 @@ const useAudio = () => {
       try {
         const testPath = `${path}/C4.mp3`;
         console.log(`Checking for piano sounds at: ${testPath}`);
-        
-        const response = await fetch(testPath, { method: 'HEAD' });
-        if (response.ok) {
-          console.log(`Found piano sounds at ${path}`);
+
+        // Use GET and validate Content-Type to avoid SPA HTML fallbacks reporting 200
+        const response = await fetch(testPath, { method: 'GET' });
+        const contentType = response.headers.get('content-type') || '';
+        const looksLikeAudio = response.ok && /audio|mpeg|mp3/i.test(contentType);
+
+        if (looksLikeAudio) {
+          console.log(`Found piano sounds at ${path} (content-type: ${contentType})`);
           setUseMP3Files(true);
           setSoundsDirectoryPath(path);
           setAudioStatus({
@@ -40,18 +44,18 @@ const useAudio = () => {
             soundsPath: path,
             lastError: null
           });
-          
+
           // Preload audio files
           await preloadAudioFiles(path);
           return true;
-        } 
+        }
+        console.warn(`Path ${path} responded with content-type '${contentType}', not audio. Skipping.`);
         return false;
       } catch (error) {
         console.log(`Error checking ${path}:`, error);
         return false;
       }
     };
-    
     const preloadAudioFiles = async (path: string) => {
       console.log("Preloading audio files...");
       const filesToPreload = ['C4.mp3', 'F4.mp3', 'G4.mp3', 'C5.mp3', 'C4-Chord.mp3'];
@@ -86,25 +90,24 @@ const useAudio = () => {
     };
     
     const checkDirectories = async () => {
-      // Try with hyphen version first
-      const foundInMain = await checkDirectory(PIANO_SOUNDS_DIRECTORY);
-      if (!foundInMain) {
-        // Try with underscore version if first one failed
-        const foundInAlt = await checkDirectory(PIANO_SOUNDS_DIRECTORY_ALT);
-        if (!foundInAlt) {
-          console.log('Piano sounds directories not found, using oscillator');
+      // Try with hyphen version first (commonly used: /piano-sounds)
+      const foundInAlt = await checkDirectory(PIANO_SOUNDS_DIRECTORY_ALT);
+      if (!foundInAlt) {
+        // Fallback to underscore version (/piano_sounds)
+        const foundInMain = await checkDirectory(PIANO_SOUNDS_DIRECTORY);
+        if (!foundInMain) {
+          console.log('Piano sounds directories not found or invalid (not audio), using oscillator');
           setUseMP3Files(false);
           setSoundsDirectoryPath(null);
           setAudioStatus({
             usingMp3: false,
             soundsPath: null,
-            lastError: 'Piano sounds directory not found'
+            lastError: 'Piano sounds directory not found or invalid (not audio)'
           });
           setAudioFilesPreloaded(true); // Mark as done even if we're using oscillator
         }
       }
     };
-    
     checkDirectories();
   }, []);
 
