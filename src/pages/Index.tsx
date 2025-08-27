@@ -15,6 +15,7 @@ const Index = () => {
   const [isExerciseActive, setIsExerciseActive] = useState(true);
   const [showResults, setShowResults] = useState(false);
   const [exerciseStats, setExerciseStats] = useState({ exercises: 0, attempts: 0 });
+  const [showConfig, setShowConfig] = useState(false);
   const { results, saveResult } = useProgress();
 
   const handleStartClick = () => {
@@ -62,13 +63,15 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-accent/30">
+    <div className="min-h-screen bg-background">
       <Header activeTab={isExerciseActive ? 'landing' : activeTab} setActiveTab={(tab) => {
         if (!isExerciseActive && !showResults) {
           setActiveTab(tab);
         }
       }} />
       {renderContent()}
+      <Footer onConfigClick={() => setShowConfig(true)} />
+      <ConfigurationPanel isOpen={showConfig} onClose={() => setShowConfig(false)} />
     </div>
   );
 };
